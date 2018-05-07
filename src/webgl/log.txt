@@ -1,0 +1,150 @@
+
+THREE.WebGLRenderer 92  bundle.js:22303:2
+THREE.WebGLShader: gl.getShaderInfoLog() vertex 0(3) : warning C7547: extension GL_ARB_gpu_shader5 not supported in profile gp4_1vp
+ 1: precision highp float;
+2: precision highp int;
+3: #define SHADER_NAME ShaderMaterial
+4: #define VERTEX_TEXTURES
+5: #define GAMMA_FACTOR 2
+6: #define MAX_BONES 0
+7: #define BONE_TEXTURE
+8: uniform mat4 modelMatrix;
+9: uniform mat4 modelViewMatrix;
+10: uniform mat4 projectionMatrix;
+11: uniform mat4 viewMatrix;
+12: uniform mat3 normalMatrix;
+13: uniform vec3 cameraPosition;
+14: attribute vec3 position;
+15: attribute vec3 normal;
+16: attribute vec2 uv;
+17: #ifdef USE_COLOR
+18: 	attribute vec3 color;
+19: #endif
+20: #ifdef USE_MORPHTARGETS
+21: 	attribute vec3 morphTarget0;
+22: 	attribute vec3 morphTarget1;
+23: 	attribute vec3 morphTarget2;
+24: 	attribute vec3 morphTarget3;
+25: 	#ifdef USE_MORPHNORMALS
+26: 		attribute vec3 morphNormal0;
+27: 		attribute vec3 morphNormal1;
+28: 		attribute vec3 morphNormal2;
+29: 		attribute vec3 morphNormal3;
+30: 	#else
+31: 		attribute vec3 morphTarget4;
+32: 		attribute vec3 morphTarget5;
+33: 		attribute vec3 morphTarget6;
+34: 		attribute vec3 morphTarget7;
+35: 	#endif
+36: #endif
+37: #ifdef USE_SKINNING
+38: 	attribute vec4 skinIndex;
+39: 	attribute vec4 skinWeight;
+40: #endif
+41:
+42: void main() {
+43: 	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+44: }  bundle.js:17226:3
+THREE.WebGLShader: gl.getShaderInfoLog() fragment 0(3) : warning C7547: extension GL_ARB_gpu_shader5 not supported in profile gp4_1fp
+ 1: precision highp float;
+2: precision highp int;
+3: #define SHADER_NAME ShaderMaterial
+4: #define GAMMA_FACTOR 2
+5: uniform mat4 viewMatrix;
+6: uniform vec3 cameraPosition;
+7: #define TONE_MAPPING
+8: #ifndef saturate
+9: 	#define saturate(a) clamp( a, 0.0, 1.0 )
+10: #endif
+11: uniform float toneMappingExposure;
+12: uniform float toneMappingWhitePoint;
+13: vec3 LinearToneMapping( vec3 color ) {
+14: 	return toneMappingExposure * color;
+15: }
+16: vec3 ReinhardToneMapping( vec3 color ) {
+17: 	color *= toneMappingExposure;
+18: 	return saturate( color / ( vec3( 1.0 ) + color ) );
+19: }
+20: #define Uncharted2Helper( x ) max( ( ( x * ( 0.15 * x + 0.10 * 0.50 ) + 0.20 * 0.02 ) / ( x * ( 0.15 * x + 0.50 ) + 0.20 * 0.30 ) ) - 0.02 / 0.30, vec3( 0.0 ) )
+21: vec3 Uncharted2ToneMapping( vec3 color ) {
+22: 	color *= toneMappingExposure;
+23: 	return saturate( Uncharted2Helper( color ) / Uncharted2Helper( vec3( toneMappingWhitePoint ) ) );
+24: }
+25: vec3 OptimizedCineonToneMapping( vec3 color ) {
+26: 	color *= toneMappingExposure;
+27: 	color = max( vec3( 0.0 ), color - 0.004 );
+28: 	return pow( ( color * ( 6.2 * color + 0.5 ) ) / ( color * ( 6.2 * color + 1.7 ) + 0.06 ), vec3( 2.2 ) );
+29: }
+30:
+31: vec3 toneMapping( vec3 color ) { return LinearToneMapping( color ); }
+32:
+33: vec4 LinearToLinear( in vec4 value ) {
+34: 	return value;
+35: }
+36: vec4 GammaToLinear( in vec4 value, in float gammaFactor ) {
+37: 	return vec4( pow( value.xyz, vec3( gammaFactor ) ), value.w );
+38: }
+39: vec4 LinearToGamma( in vec4 value, in float gammaFactor ) {
+40: 	return vec4( pow( value.xyz, vec3( 1.0 / gammaFactor ) ), value.w );
+41: }
+42: vec4 sRGBToLinear( in vec4 value ) {
+43: 	return vec4( mix( pow( value.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), value.rgb * 0.0773993808, vec3( lessThanEqual( value.rgb, vec3( 0.04045 ) ) ) ), value.w );
+44: }
+45: vec4 LinearTosRGB( in vec4 value ) {
+46: 	return vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.w );
+47: }
+48: vec4 RGBEToLinear( in vec4 value ) {
+49: 	return vec4( value.rgb * exp2( value.a * 255.0 - 128.0 ), 1.0 );
+50: }
+51: vec4 LinearToRGBE( in vec4 value ) {
+52: 	float maxComponent = max( max( value.r, value.g ), value.b );
+53: 	float fExp = clamp( ceil( log2( maxComponent ) ), -128.0, 127.0 );
+54: 	return vec4( value.rgb / exp2( fExp ), ( fExp + 128.0 ) / 255.0 );
+55: }
+56: vec4 RGBMToLinear( in vec4 value, in float maxRange ) {
+57: 	return vec4( value.xyz * value.w * maxRange, 1.0 );
+58: }
+59: vec4 LinearToRGBM( in vec4 value, in float maxRange ) {
+60: 	float maxRGB = max( value.x, max( value.g, value.b ) );
+61: 	float M      = clamp( maxRGB / maxRange, 0.0, 1.0 );
+62: 	M            = ceil( M * 255.0 ) / 255.0;
+63: 	return vec4( value.rgb / ( M * maxRange ), M );
+64: }
+65: vec4 RGBDToLinear( in vec4 value, in float maxRange ) {
+66: 	return vec4( value.rgb * ( ( maxRange / 255.0 ) / value.a ), 1.0 );
+67: }
+68: vec4 LinearToRGBD( in vec4 value, in float maxRange ) {
+69: 	float maxRGB = max( value.x, max( value.g, value.b ) );
+70: 	float D      = max( maxRange / maxRGB, 1.0 );
+71: 	D            = min( floor( D ) / 255.0, 1.0 );
+72: 	return vec4( value.rgb * ( D * ( 255.0 / maxRange ) ), D );
+73: }
+74: const mat3 cLogLuvM = mat3( 0.2209, 0.3390, 0.4184, 0.1138, 0.6780, 0.7319, 0.0102, 0.1130, 0.2969 );
+75: vec4 LinearToLogLuv( in vec4 value )  {
+76: 	vec3 Xp_Y_XYZp = value.rgb * cLogLuvM;
+77: 	Xp_Y_XYZp = max(Xp_Y_XYZp, vec3(1e-6, 1e-6, 1e-6));
+78: 	vec4 vResult;
+79: 	vResult.xy = Xp_Y_XYZp.xy / Xp_Y_XYZp.z;
+80: 	float Le = 2.0 * log2(Xp_Y_XYZp.y) + 127.0;
+81: 	vResult.w = fract(Le);
+82: 	vResult.z = (Le - (floor(vResult.w*255.0))/255.0)/255.0;
+83: 	return vResult;
+84: }
+85: const mat3 cLogLuvInverseM = mat3( 6.0014, -2.7008, -1.7996, -1.3320, 3.1029, -5.7721, 0.3008, -1.0882, 5.6268 );
+86: vec4 LogLuvToLinear( in vec4 value ) {
+87: 	float Le = value.z * 255.0 + value.w;
+88: 	vec3 Xp_Y_XYZp;
+89: 	Xp_Y_XYZp.y = exp2((Le - 127.0) / 2.0);
+90: 	Xp_Y_XYZp.z = Xp_Y_XYZp.y / value.y;
+91: 	Xp_Y_XYZp.x = value.x * Xp_Y_XYZp.z;
+92: 	vec3 vRGB = Xp_Y_XYZp.rgb * cLogLuvInverseM;
+93: 	return vec4( max(vRGB, 0.0), 1.0 );
+94: }
+95:
+96: vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }
+97: vec4 envMapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }
+98: vec4 emissiveMapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }
+99: vec4 linearToOutputTexel( vec4 value ) { return LinearToLinear( value ); }
+100:
+101: void main() {  gl_FragColor = vec4(1.0,0.0,1.0,1.0); }  bundle.js:17226:3
+THREE.WebGLProgram: gl.getProgramInfoLog() Vertex info
